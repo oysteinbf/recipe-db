@@ -1,0 +1,6 @@
+notes.txt
+sql/queries.sql
+code-testing.ipynb
+.ipynb*
+__pycache__
+food.db
