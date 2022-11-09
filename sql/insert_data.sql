@@ -1,9 +1,9 @@
-INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags)
+INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags, n_servings)
 VALUES 
-   ('Tomatsuppe', 'En klassisk favoritt!', 20, 30, 'Mias mat', 'vegetar, høst'),
-   ('Poke bowl', 'En laksesalat proppfull av masse deilig smak, inspirert fra Hawaii. Superenkel hverdagsluksus som lages på et blunk! ', 30, 0, ' Silje Feiring / Spoon.no', NULL),
-   ('Butter chicken', 'En indisk vinner', 60, 40, NULL, 'kylling, indisk'),
-   ('Taco', NULL, NULL, NULL, NULL, NULL);
+   ('Tomatsuppe', 'En klassisk favoritt!', 20, 30, 'Mias mat', 'vegetar, høst', 4),
+   ('Poke bowl', 'En laksesalat proppfull av masse deilig smak, inspirert fra Hawaii', 30, 0, ' Silje Feiring / Spoon.no', NULL, 4),
+   ('Butter chicken', 'En indisk vinner', 60, 40, NULL, 'kylling, indisk', 4),
+   ('Taco', NULL, NULL, NULL, NULL, NULL, 2);
 
 INSERT INTO ingredient (name, description, category)
 VALUES 
@@ -52,24 +52,24 @@ VALUES
    (4, 5, 'Suspendisse vestibulum enim vitae sagittis cursus. Etiam at felis malesuada, maximus ex at, tristique mi. Nunc venenatis velit purus, nec convallis magna rhoncus non. Proin luctus, tellus ac vulputate aliquam, lectus quam vestibulum lacus, in consequat augue purus malesuada nisi. Ut lacinia arcu leo, ac scelerisque tortor feugiat eu. Donec leo dolor, sagittis a finibus at, malesuada ut mi. Sed vel tortor bibendum, ultrices lacus vel, semper massa. Vivamus cursus, erat vel ornare consequat, lectus lectus tempus diam, quis dapibus tortor ante eget libero. Aenean pulvinar odio aliquet tellus imperdiet tempus. Suspendisse cursus velit eu sapien ultricies rutrum. Fusce diam massa, blandit eu dui nec, consectetur rutrum ante. Phasellus egestas facilisis ullamcorper. Quisque ac volutpat est, sed dictum nunc. Proin venenatis turpis id ligula egestas elementum. Mauris nec mi nec erat facilisis aliquam.');
 
 
-INSERT INTO bridge_recipe_ingredient (recipe_id, ingredient_id, amount, n_servings, unit, preparation_info, multiplication_factor)
+INSERT INTO bridge_recipe_ingredient (recipe_id, ingredient_id, amount, unit, preparation_info, multiplication_factor)
 VALUES
-   (1, 6, 3, 4, 'fedd', 'finhakket', 2),
-   (1, 19, 2, 4, 'stk', 'finhakket', 2),
-   (1, 20, 0.5, 4, 'stk', 'finhakket', 2),
-   (1, 21, 2, 4, 'ss', NULL, 2),
-   (1, 12, 2, 4, 'bokser', NULL, 2),
-   (1, 22, 7.5, 4, 'dl', NULL, 2),
-   (2, 13, 4, 4, 'ss', NULL, 2),
-   (2, 14, 2, 4, 'ss', NULL, 2),
-   (2, 16, 3, 4, 'ss', NULL, 2),
-   (2, 17, 1, 4, 'ss', NULL, 2),
-   (2, 18, 2, 4, 'stk', NULL, 2),
-   (2, 11, 600, 4, 'g', NULL, 2),
-   (2, 8, 3, 4, 'stk', NULL, 2),
-   (2, 4, 20, 4, 'g', NULL, 2),
-   (2, 15, 2, 4, 'ss', NULL, 2),
-   (3, 2, 400, 4, 'g', NULL, 2);
+   (1, 6, 3, 'fedd', 'finhakket', 2),
+   (1, 19, 2, 'stk', 'finhakket', 2),
+   (1, 20, 0.5, 'stk', 'finhakket', 2),
+   (1, 21, 2, 'ss', NULL, 2),
+   (1, 12, 2, 'bokser', NULL, 2),
+   (1, 22, 7.5, 'dl', NULL, 2),
+   (2, 13, 4, 'ss', NULL, 2),
+   (2, 14, 2, 'ss', NULL, 2),
+   (2, 16, 3, 'ss', NULL, 2),
+   (2, 17, 1, 'ss', NULL, 2),
+   (2, 18, 2, 'stk', NULL, 2),
+   (2, 11, 600, 'g', NULL, 2),
+   (2, 8, 3, 'stk', NULL, 2),
+   (2, 4, 20, 'g', NULL, 2),
+   (2, 15, 2, 'ss', NULL, 2),
+   (3, 2, 400, 'g', NULL, 2);
 
 INSERT INTO category (name, symbol, color_code)
 VALUES

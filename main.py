@@ -15,6 +15,7 @@ class Recipe(BaseModel):
     cook_time: Union[int, None] = None
     source: Union[str, None] = None
     tags: Union[str, None] = None
+    n_servings: int
 
 
 app = FastAPI()
@@ -41,8 +42,8 @@ def read_root():
 def create_recipe(recipe: Recipe):
     """Add recipe to the database"""
     sql = """
-    INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags, n_servings)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """
     recipe_info = tuple(vars(recipe).values())
     with sqlite3.connect('food.db') as con:
@@ -69,7 +70,7 @@ def read_recipes():
 def read_ingredients():
     """Get all ingredients"""
     sql = """
-          SELECT r.id, i.name , bri.amount, bri.unit, bri.preparation_info, bri.n_servings 
+          SELECT r.id, i.name , bri.amount, bri.unit, bri.preparation_info
              from recipe r JOIN bridge_recipe_ingredient bri 
                 ON r.id = bri.recipe_id
             JOIN ingredient i 
@@ -88,7 +89,7 @@ def read_ingredients():
 def read_ingredient(id: int):
     """Get the ingredients for a specific recipe"""
     sql = """
-          SELECT i.name , bri.amount, bri.unit, bri.preparation_info, bri.n_servings 
+          SELECT i.name , bri.amount, bri.unit, bri.preparation_info
              from recipe r JOIN bridge_recipe_ingredient bri 
                 ON r.id = bri.recipe_id
             JOIN ingredient i 

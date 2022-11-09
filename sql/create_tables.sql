@@ -6,6 +6,7 @@ CREATE TABLE recipe (
     cook_time INTEGER,
     source TEXT,
     tags TEXT,
+    n_servings INTEGER DEFAULT 4 NOT NULL,
     isFav INTEGER DEFAULT 0
 );
 
@@ -21,7 +22,6 @@ CREATE TABLE bridge_recipe_ingredient (
     recipe_id INTEGER,
     ingredient_id INTEGER,
     amount REAL,
-    n_servings INTEGER DEFAULT 4,
     unit TEXT,
     preparation_info TEXT,
     multiplication_factor INTEGER,
