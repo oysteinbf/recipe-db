@@ -89,7 +89,7 @@ def read_ingredients():
 def read_ingredient(id: int):
     """Get the ingredients for a specific recipe"""
     sql = """
-          SELECT i.name , bri.amount, bri.unit, bri.preparation_info
+          SELECT i.name , bri.amount, bri.unit, bri.preparation_info, bri.multiplication_factor
              from recipe r JOIN bridge_recipe_ingredient bri 
                 ON r.id = bri.recipe_id
             JOIN ingredient i 
