@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,6 +17,8 @@ class Recipe(BaseModel):
     tags: Union[str, None] = None
     n_servings: int
 
+class FavIDs(BaseModel):
+    ids: List[int] = []
 
 app = FastAPI()
 
@@ -51,6 +53,22 @@ def create_recipe(recipe: Recipe):
         cur.execute(sql, recipe_info)
         con.commit()
     return recipe
+
+@app.put("/favourites")
+def update_favourites(favids: FavIDs):
+    """Update favourites (isFav) for the recipes
+       The field isFav is changed by the frontend application,
+       and is persisted in the database by this function
+    """
+    sql1 = """UPDATE recipe SET isFav=0 WHERE 1=1""" # First set all to 0
+    sql2 = """UPDATE recipe SET isFav=1 WHERE id = ?"""
+    with sqlite3.connect('food.db') as con:
+        cur = con.cursor()
+        cur.execute(sql1)
+        for favid in favids.ids:
+            cur.execute(sql2, (favid,))
+            con.commit()
+    return {"favids": favids.ids}
 
 @app.get("/recipes")
 def read_recipes():
