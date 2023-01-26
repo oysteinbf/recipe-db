@@ -8,6 +8,12 @@ def dict_factory(cursor, row):
     col_names = [col[0] for col in cursor.description]
     return {key: value for key, value in zip(col_names, row)}
 
+class Ingredient(BaseModel):
+    name: str
+    amount: Union[int, None] = None
+    unit: Union[str, None] = None
+    preparation_info: Union[str, None] = None
+
 class Recipe(BaseModel):
     name: str
     introduction: Union[str, None] = None
@@ -16,6 +22,8 @@ class Recipe(BaseModel):
     source: Union[str, None] = None
     tags: Union[str, None] = None
     n_servings: int
+    ingredients: List[Ingredient] = []
+    method: List[str] = []
 
 class FavIDs(BaseModel):
     ids: List[int] = []
@@ -40,19 +48,89 @@ app.add_middleware(
 def read_root():
     return {"Hello": "World"}
 
-@app.post("/recipes")
-def create_recipe(recipe: Recipe):
-    """Add recipe to the database"""
-    sql = """
-    INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags, n_servings)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """
-    recipe_info = tuple(vars(recipe).values())
+@app.post("/recipe")
+def create_recipe(data: Recipe):
+    """Add recipe
+
+        Example body:
+        {
+        "name": "Avokadosalat",
+        "introduction": "Sunt!",
+        "prep_time": 20,
+        "cook_time": null,
+        "source": null,
+        "tags": null,
+        "n_servings": 4,
+        "ingredients": [
+            {
+                "name": "Avokado",
+                "amount": 2,
+                "unit": "stk",
+                "preparation_info": null
+            },
+            {
+                "name": "Tomat",
+                "amount": 100,
+                "unit": "g",
+                "preparation_info": "Finhakket"
+            },
+            {
+                "name": "Fetaost",
+                "amount": null,
+                "unit": null,
+                "preparation_info": null
+            }
+        ],
+        "method": [
+            "Kutt opp",
+            "Server!"
+        ]
+        }
+"""
     with sqlite3.connect('food.db') as con:
         cur = con.cursor()
-        cur.execute(sql, recipe_info)
+        # First get a list of existing ingredients. Insert into table if new ingredient does not exist.
+        cur.execute('SELECT name FROM ingredient')
+        ingredients = [x[0] for x in cur.fetchall()]  # ["Avokado", "Chili", ...]
+        ingredient_pks = []
+        ingredient_names = [x.name for x in data.ingredients]
+        for x in ingredient_names:
+            if x not in ingredients:
+                cur.execute('INSERT INTO ingredient (name) VALUES (?)', (x,))
+            # Get PKs for later insertion into bridge table
+            cur.execute('SELECT id FROM ingredient WHERE name = ?', (x,))
+            ingredient_pks.append(cur.fetchone()[0])
+        # Now insert the recipe info
+
+        recipe_info = (data.name, data.introduction, data.prep_time, data.cook_time,
+                       data.source, data.tags, data.n_servings)
+        sql_recipe = """
+        INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags, n_servings)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        cur.execute(sql_recipe, recipe_info)
+        # Get PK for later insertion into other tables
+        cur.execute('SELECT id from recipe where name = ?', (data.name,))
+        recipe_pk = cur.fetchone()[0]
+
+        # Insert data into bridge table (now we have all PKs)
+        sql_bri = """INSERT INTO bridge_recipe_ingredient
+                    (recipe_id, ingredient_id, amount, unit, preparation_info)
+                     VALUES (?, ?, ?, ?, ?) """
+        for i in range(0, len(ingredient_pks)):
+            ingredient_info = (recipe_pk, ingredient_pks[i], data.ingredients[i].amount,
+                 data.ingredients[i].unit, data.ingredients[i].preparation_info)
+            cur.execute(sql_bri, ingredient_info)
+
+        # Add the method descriptions
+        sql_method = """INSERT INTO method (recipe_id, step_number, step_description)
+                VALUES (?, ?, ?)"""
+        for i, step_description in enumerate(data.method):
+            cur.execute(sql_method, (recipe_pk, i, step_description))
+
         con.commit()
-    return recipe
+    # TODO: Also write to the table Category (similar procedure as for the ingredients)
+    return data
 
 @app.put("/favourites")
 def update_favourites(favids: FavIDs):
@@ -108,7 +186,7 @@ def read_ingredient(id: int):
     """Get the ingredients for a specific recipe"""
     sql = """
           SELECT i.name , bri.amount, bri.unit, bri.preparation_info, bri.multiplication_factor
-             from recipe r JOIN bridge_recipe_ingredient bri 
+             from recipe r JOIN bridge_recipe_ingredient bri
                 ON r.id = bri.recipe_id
             JOIN ingredient i 
                 ON i.id = bri.ingredient_id 
@@ -117,7 +195,7 @@ def read_ingredient(id: int):
     with sqlite3.connect('food.db') as con:
         con.row_factory = dict_factory
         cur = con.cursor()
-        cur.execute(sql, str(id))
+        cur.execute(sql, (id,))
         ingredients = cur.fetchall()
     return ingredients
 
@@ -131,7 +209,7 @@ def read_method(id: int):
     with sqlite3.connect('food.db') as con:
         con.row_factory = dict_factory
         cur = con.cursor()
-        cur.execute(sql, str(id))
+        cur.execute(sql, (id,))
         method = cur.fetchall()
     return method
 
@@ -158,6 +236,37 @@ def read_category(id: int):
     with sqlite3.connect('food.db') as con:
         con.row_factory = dict_factory
         cur = con.cursor()
-        cur.execute(sql, str(id))
+        cur.execute(sql, (id,))
         categories = cur.fetchall()
     return categories
+
+@app.get("/groceries")
+def read_groceries():
+    """Get the grocery list for all recipes marked as favourite"""
+    sql = """
+          with ingredients AS
+          (SELECT i.name,
+                   i.category,
+                   bri.amount,
+                   bri.unit
+          FROM ingredient i
+          JOIN bridge_recipe_ingredient bri
+              ON i.id = bri.ingredient_id
+          JOIN recipe r
+              ON bri.recipe_id = r.id
+          WHERE r.isFav = 1)
+          SELECT name,
+                   category,
+                   sum(amount) AS amount,
+                   unit
+          FROM ingredients
+          GROUP BY  name, category, unit
+          ORDER BY  category, name;
+          """
+    with sqlite3.connect('food.db') as con:
+        con.row_factory = dict_factory
+        cur = con.cursor()
+        cur.execute(sql)
+        groceries = cur.fetchall()
+
+    return groceries
