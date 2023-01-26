@@ -21,6 +21,7 @@ $ cat sql/insert_data.sql | sqlite3 food.db
 Start server:
 
 ```
+$ poetry shell
 $ uvicorn main:app --reload
 ```
 
