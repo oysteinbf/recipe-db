@@ -24,6 +24,7 @@ class Recipe(BaseModel):
     n_servings: int
     ingredients: List[Ingredient] = []
     method: List[str] = []
+    categories: List[str] = []
 
 class FavIDs(BaseModel):
     ids: List[int] = []
@@ -81,10 +82,8 @@ def create_recipe(data: Recipe):
                 "preparation_info": null
             }
         ],
-        "method": [
-            "Kutt opp",
-            "Server!"
-        ]
+        "method": ["Kutt opp", "Server!"],
+        "categories": ["Fisk", "Suppe"]
         }
 """
     with sqlite3.connect('food.db') as con:
@@ -122,6 +121,26 @@ def create_recipe(data: Recipe):
                  data.ingredients[i].unit, data.ingredients[i].preparation_info)
             cur.execute(sql_bri, ingredient_info)
 
+        # Get a list of existing categories. Insert into table if new category does not exist.
+        cur.execute('SELECT name FROM category')
+        existing_categories = [x[0] for x in cur.fetchall()]  # ["Suppe", "Fisk", ...]
+        category_pks = []
+        #category_names = [x for x in data.categories]
+        for x in data.categories:#category_names:
+            if x not in existing_categories:
+                cur.execute('INSERT INTO category (name) VALUES (?)', (x,))
+            # Get PKs for later insertion into bridge table
+            cur.execute('SELECT id FROM category WHERE name = ?', (x,))
+            category_pks.append(cur.fetchone()[0])
+
+        # Insert data into bridge table (now we have all PKs)
+        sql_brc = """INSERT INTO bridge_recipe_category
+                    (recipe_id, category_id)
+                     VALUES (?, ?) """
+        for i in range(0, len(category_pks)):
+            category_info = (recipe_pk, category_pks[i])
+            cur.execute(sql_brc, category_info)
+
         # Add the method descriptions
         sql_method = """INSERT INTO method (recipe_id, step_number, step_description)
                 VALUES (?, ?, ?)"""
@@ -129,7 +148,6 @@ def create_recipe(data: Recipe):
             cur.execute(sql_method, (recipe_pk, i, step_description))
 
         con.commit()
-    # TODO: Also write to the table Category (similar procedure as for the ingredients)
     return data
 
 @app.put("/favourites")
