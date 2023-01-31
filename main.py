@@ -87,6 +87,7 @@ def create_recipe(data: Recipe):
         }
 """
     with sqlite3.connect('food.db') as con:
+        con.execute('PRAGMA foreign_keys = ON;') # Enable foreign key support
         cur = con.cursor()
         # First get a list of existing ingredients. Insert into table if new ingredient does not exist.
         cur.execute('SELECT name FROM ingredient')
