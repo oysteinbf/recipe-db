@@ -19,6 +19,10 @@ class Recipe(BaseModel):
     introduction: Union[str, None] = None
     prep_time: Union[int, None] = None
     cook_time: Union[int, None] = None
+    total_time: Union[int, None] = None
+    difficulty: Union[str, None] = None
+    child_friendly: Union[bool, None] = None
+    leftover_friendly: Union[bool, None] = None
     source: Union[str, None] = None
     tags: Union[str, None] = None
     n_servings: int
@@ -54,37 +58,26 @@ def create_recipe(data: Recipe):
     """Add recipe
 
         Example body:
-        {
-        "name": "Avokadosalat",
-        "introduction": "Sunt!",
-        "prep_time": 20,
-        "cook_time": null,
+       {
+        "name": "Avocado Salad",
+        "introduction": "A very simple salad",
+        "prep_time": 10,
+        "cook_time": 0,
+        "total_time": 10,
+        "difficulty": "Easy",
+        "child_friendly": 1,
+        "leftover_friendly": 0,
         "source": null,
         "tags": null,
         "n_servings": 4,
         "ingredients": [
-            {
-                "name": "Avokado",
-                "amount": 2,
-                "unit": "stk",
-                "preparation_info": null
-            },
-            {
-                "name": "Tomat",
-                "amount": 100,
-                "unit": "g",
-                "preparation_info": "Finhakket"
-            },
-            {
-                "name": "Fetaost",
-                "amount": null,
-                "unit": null,
-                "preparation_info": null
-            }
+            { "name": "Avocado", "amount": 2, "unit": "pcs", "preparation_info": null },
+            { "name": "Tomato", "amount": 2, "unit": "pcs", "preparation_info": "finely chopped" },
+            { "name": "Garlic", "amount": 1, "unit": "clove", "preparation_info": "minced" }
         ],
-        "method": ["Kutt opp", "Server!"],
-        "categories": ["Fisk", "Suppe"]
-        }
+        "method": [ "Chop all the ingredients", "Put all the ingredients in a bowl", "Serve" ],
+        "categories": [ "Vegetarian", "Salad" ]
+        } 
 """
     with sqlite3.connect('food.db') as con:
         con.execute('PRAGMA foreign_keys = ON;') # Enable foreign key support
@@ -102,11 +95,13 @@ def create_recipe(data: Recipe):
             ingredient_pks.append(cur.fetchone()[0])
         # Now insert the recipe info
 
-        recipe_info = (data.name, data.introduction, data.prep_time, data.cook_time,
+        recipe_info = (data.name, data.introduction, data.prep_time, data.cook_time, data.total_time,
+                       data.difficulty, data.child_friendly, data.leftover_friendly,
                        data.source, data.tags, data.n_servings)
         sql_recipe = """
-        INSERT INTO recipe (name, introduction, prep_time, cook_time, source, tags, n_servings)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO recipe (name, introduction, prep_time, cook_time, total_time, difficulty,
+         child_friendly, leftover_friendly, source, tags, n_servings)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         cur.execute(sql_recipe, recipe_info)
         # Get PK for later insertion into other tables
